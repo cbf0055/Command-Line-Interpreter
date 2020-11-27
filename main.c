@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -8,6 +9,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+void getArg(char* line, char cmd[], char* param[])
+{
+	char* holder[100];		//holds the tokens from strtok
+	char* aToken;			//for strtok;
+	int i = 0;				//for keeping count of elements
+	
+	aToken = strtok (line," ");		//split into first token
+	while (aToken != NULL)
+	{
+		holder[i] = strdup(aToken);	//store into holder array
+		i++;						//increment count
+		aToken = strtok (NULL, " \n");		//move to next token
+	}
+	
+	strcpy(cmd, holder[0]);	//first word in holder will be the command
+	
+	for(int j = 0; j < i; j++)		//store the contents of array in parameter array, add null terminator at the end
+	{
+		param[j] = holder[j];
+		param[i] = NULL;
+	}
+}
+
+	
 
 void cd(char* buffer, char* token){                             //function to perfrom change directory
     token=strchr(buffer, ' ');
@@ -25,34 +51,57 @@ void cd(char* buffer, char* token){                             //function to pe
 void exitShell(char* line)
 {
 	char* tToken;					//for the strtok function
-	char* path = "/bin/";
-	char* command;
-	char* fullLine;
+	char command[100];				//holds the command
+	char program[512];				//holds the command with path
+	char* parameters[100];			//holds the parameters for the command
 	int pid;
-	int cycle = 0;
+	char *envp[] = { (char *) "PATH=/bin", 0 };  //environment variable
 	tToken = strtok (line,";\n");		//first split
 	  while (tToken != NULL)            //extract commands
 	  {
-		cycle++;
 		if(tToken[0] == ' ')
 		{	
 			memmove (tToken, tToken+1, strlen (tToken+1) + 1); // get rid of space in string
-			if(strstr(tToken, "exit") != NULL)
+			if(strstr(tToken, "exit") != NULL)  //if it is the exit command, do nothing until end
 			{
 			}
 			else
 			{
-				printf ("Cycle %d: %s\n",cycle, tToken);    //print to show that command was extracted (for testing)
+				getArg (tToken, command, parameters);	//split command and arguments
+				strcpy(program, "/bin/");		//initialize program with path
+				strcat(program,command);	//add command to end of path
+				int pid= fork();              //fork child
+				if(pid==0)
+				{               //Child
+					execve(program, parameters, envp); //execute command
+					exit(0);
+				}
+				else
+				{
+					wait(NULL);
+				}
 			}
 		}
 		else
 		{
-			if(strstr(tToken, "exit") != NULL)
+			if(strstr(tToken, "exit") != NULL)	//if it is the exit command, do nothing until end
 			{
 			}
 			else
 			{
-				printf ("Cycle %d: %s\n",cycle, tToken);   //print to show that command was extracted (for testing)
+				getArg (tToken, command, parameters);	//split command and arguments
+				strcpy(program, "/bin/");		//initialize program with path
+				strcat(program,command);	//add command to end of path
+				int pid= fork();              //fork child
+				if(pid==0)
+				{               //Child
+					execve(program, parameters, envp); //execute command
+					exit(0);
+				}
+				else
+				{
+					wait(NULL);
+				}
 			}
 		}
 		tToken = strtok (NULL, ";\n");
