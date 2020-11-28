@@ -10,6 +10,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+void exeCmd(char cmd[], char* param[])
+{
+	char program[512];				//holds the command with path
+	char *envp[] = { (char *) "PATH=/bin", 0 };  //environment variable
+	strcpy(program, "/bin/");		//initialize program with path
+	strcat(program, cmd);	//add command to end of path
+	int pid = fork();              //fork child
+		if(pid==0)
+		{               //Child
+			execve(program, param, envp); //execute command
+			exit(0);
+		}
+		else
+		{
+			wait(NULL);
+		}
+}		
+		
 void getArg(char* line, char cmd[], char* param[])
 {
 	char* holder[100];		//holds the tokens from strtok
@@ -54,11 +72,13 @@ void exitShell(char* line)
 	char command[100];				//holds the command
 	char program[512];				//holds the command with path
 	char* parameters[100];			//holds the parameters for the command
+	int cmdCount = 0;				//counts the amount of commands
+	char* commandHolder[20];		//holds the commands
 	int pid;
 	char *envp[] = { (char *) "PATH=/bin", 0 };  //environment variable
 	tToken = strtok (line,";\n");		//first split
-	  while (tToken != NULL)            //extract commands
-	  {
+	while (tToken != NULL)            //extract commands
+	{
 		if(tToken[0] == ' ')
 		{	
 			memmove (tToken, tToken+1, strlen (tToken+1) + 1); // get rid of space in string
@@ -67,19 +87,8 @@ void exitShell(char* line)
 			}
 			else
 			{
-				getArg (tToken, command, parameters);	//split command and arguments
-				strcpy(program, "/bin/");		//initialize program with path
-				strcat(program,command);	//add command to end of path
-				int pid= fork();              //fork child
-				if(pid==0)
-				{               //Child
-					execve(program, parameters, envp); //execute command
-					exit(0);
-				}
-				else
-				{
-					wait(NULL);
-				}
+				commandHolder[cmdCount] = tToken;		//store the command in the holder array
+				cmdCount++;								//increment count of commands
 			}
 		}
 		else
@@ -89,24 +98,19 @@ void exitShell(char* line)
 			}
 			else
 			{
-				getArg (tToken, command, parameters);	//split command and arguments
-				strcpy(program, "/bin/");		//initialize program with path
-				strcat(program,command);	//add command to end of path
-				int pid= fork();              //fork child
-				if(pid==0)
-				{               //Child
-					execve(program, parameters, envp); //execute command
-					exit(0);
-				}
-				else
-				{
-					wait(NULL);
-				}
+				commandHolder[cmdCount] = tToken;		//store the command in the holder array
+				cmdCount++;								//increment count of commands
 			}
 		}
 		tToken = strtok (NULL, ";\n");
-	  }
+	}
 	  
+	for(int i = 0; i < cmdCount; i++)		//execute each command
+	{
+		getArg (commandHolder[i], command, parameters);	//split command and arguments
+		exeCmd (command, parameters);					//execute the command
+	}
+	
 	  exit(0);          //exit shell when all commands proccessed
 }
 int main(){
