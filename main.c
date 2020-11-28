@@ -10,30 +10,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-void exeCmd(char cmd[], char* param[])
+void exeCmd(char* line)
 {
 	char program[512];				//holds the command with path
 	char *envp[] = { (char *) "PATH=/bin", 0 };  //environment variable
-	strcpy(program, "/bin/");		//initialize program with path
-	strcat(program, cmd);	//add command to end of path
-	int pid = fork();              //fork child
-		if(pid==0)
-		{               //Child
-			execve(program, param, envp); //execute command
-			exit(0);
-		}
-		else
-		{
-			wait(NULL);
-		}
-}		
-		
-void getArg(char* line, char cmd[], char* param[])
-{
 	char* holder[100];		//holds the tokens from strtok
 	char* aToken;			//for strtok;
+	char* param[100];			//holds the parameters for the command
+	char cmd[100];				//holds the command
 	int i = 0;				//for keeping count of elements
-	
+	//splitting arguments from command
 	aToken = strtok (line," ");		//split into first token
 	while (aToken != NULL)
 	{
@@ -49,9 +35,20 @@ void getArg(char* line, char cmd[], char* param[])
 		param[j] = holder[j];
 		param[i] = NULL;
 	}
-}
-
-	
+	//running the command
+	strcpy(program, "/bin/");		//initialize program with path
+	strcat(program, cmd);	//add command to end of path
+	int pid = fork();              //fork child
+		if(pid==0)
+		{               //Child
+			execve(program, param, envp); //execute command
+			exit(0);
+		}
+		else
+		{
+			wait(NULL);
+		}
+}		
 
 void cd(char* buffer, char* token){                             //function to perfrom change directory
     token=strchr(buffer, ' ');
@@ -69,13 +66,8 @@ void cd(char* buffer, char* token){                             //function to pe
 void exitShell(char* line)
 {
 	char* tToken;					//for the strtok function
-	char command[100];				//holds the command
-	char program[512];				//holds the command with path
-	char* parameters[100];			//holds the parameters for the command
 	int cmdCount = 0;				//counts the amount of commands
 	char* commandHolder[20];		//holds the commands
-	int pid;
-	char *envp[] = { (char *) "PATH=/bin", 0 };  //environment variable
 	tToken = strtok (line,";\n");		//first split
 	while (tToken != NULL)            //extract commands
 	{
@@ -107,8 +99,7 @@ void exitShell(char* line)
 	  
 	for(int i = 0; i < cmdCount; i++)		//execute each command
 	{
-		getArg (commandHolder[i], command, parameters);	//split command and arguments
-		exeCmd (command, parameters);					//execute the command
+		exeCmd (commandHolder[i]);					//execute the command
 	}
 	
 	  exit(0);          //exit shell when all commands proccessed
