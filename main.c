@@ -104,32 +104,62 @@ void exitShell(char* line)
 	
 	  exit(0);          //exit shell when all commands proccessed
 }
+
+void cmdProcess(char* line)  //function based on exit function, to execute commands without exitting
+{
+	char* tToken;					//for the strtok function
+	int cmdCount = 0;				//counts the amount of commands
+	char* commandHolder[20];		//holds the commands
+	tToken = strtok (line,";\n");		//first split
+	while (tToken != NULL)            //extract commands
+	{
+		if(tToken[0] == ' ')
+		{	
+			memmove (tToken, tToken+1, strlen (tToken+1) + 1); // get rid of space in string
+			commandHolder[cmdCount] = tToken;		//store the command in the holder array
+			cmdCount++;								//increment count of commands
+		}
+		else
+		{
+			commandHolder[cmdCount] = tToken;		//store the command in the holder array
+			cmdCount++;								//increment count of commands
+		}
+		tToken = strtok (NULL, ";\n");
+	}
+	  
+	for(int i = 0; i < cmdCount; i++)		//execute each command
+	{
+		exeCmd (commandHolder[i]);					//execute the command
+	}
+	
+}
+	
 int main(){
 
     char* buffer;
     char* token;
-    token = strtok (buffer," ");                                     //use token to be able to seperate the buffer
-   
-    while(1){                           //while buffer != exit perform each command		//strncmp(buffer, "exit", 4) !=0
+    token = strtok (buffer,";\n");	//use token to be able to seperate the buffer
+	char* prompt = "prompt D";									//set prompt
+	
+	//printf("Customize shell prompt (extra credit) (Type yes or no): ");
+	//fgets(choice, 100, stdin);
 
-		printf("prompt D: ");                                           //print prompt and get user input
+	while(1){                           //while buffer != exit perform each command		//strncmp(buffer, "exit", 4) !=0
+
+		printf("%s: ", prompt);                                          //print prompt and get user input
 		fgets(buffer, 100, stdin);
 
-		if(strstr(buffer, "cd") != NULL){                            //if cd is in the buffer, perform cd function       
-            cd(buffer, token);
-        }
-
-        if(strstr(buffer, "ls") != NULL){                             //used to see if cd works properly
-            system("ls");
-        }
-		
-		if(strstr(buffer, "exit") != NULL)
+		if(strstr(buffer, "exit") != NULL)  //if input line contains exit, execute commands and exit
 		{
 			exitShell(buffer);
 		}
-   
+		
+		if(strstr(buffer, "cd") != NULL){                            //if cd is in the buffer, perform cd function       
+            cd(buffer, token);
+        }
+		
+		cmdProcess(buffer);			//otherwise, process commands
     }
-   
 
     return 0;
 }
