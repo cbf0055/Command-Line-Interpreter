@@ -50,17 +50,21 @@ void exeCmd(char* line)
 		}
 }		
 
-void cd(char* buffer, char* token){                             //function to perfrom change directory
-    token=strchr(buffer, ' ');
+void cd(char* buffer, char* token){                          //function to perfrom change directory
+	token=strchr(buffer, ' ');
+
     if(token){
-        char *tempToken = token + 1;                               //tokenize the original string to be able to seperate cd and the path
+        char *tempToken = token + 1;                        //tokenize the original string to be able to seperate cd and the path
         token = tempToken;
         char *newLine = strchr(token, '\n');
             if(newLine) {
                 *newLine = '\0';
-                }
-                chdir(token);                                        //perform cd using chdir() and the path as the argument
-        }
+				}
+					chdir(token);				           //perform cd using chdir() and the path as the argument
+		}
+		else{		
+				chdir(getenv("HOME"));	//go to home directory if token is empty
+			}
 }
 
 void exitShell(char* line)
@@ -119,6 +123,7 @@ void cmdProcess(char* line)  //function based on exit function, to execute comma
 			commandHolder[cmdCount] = tToken;		//store the command in the holder array
 			cmdCount++;								//increment count of commands
 		}
+
 		else
 		{
 			commandHolder[cmdCount] = tToken;		//store the command in the holder array
@@ -133,17 +138,59 @@ void cmdProcess(char* line)  //function based on exit function, to execute comma
 	}
 	
 }
-	
+
+void pipe_func(char *buffer){		//ends program if you try to pipe ;-;
+		char* token;				//keeps track of the arguments
+		int p[2], pid;				//variables for process
+		token=strtok(buffer, " ");	//seperates buffer by spaces
+		for(int i=0; i<3; ++i){		//loops for 3 args
+				pipe(p);			
+				if(pid== fork() ==0){	//fork
+					while(token != NULL){		//loop through arguments
+						if(strcmp(token, "|") && token != NULL){	//if there's a bar dont do this
+							//char* temp = token;
+							//printf("%s\n", temp);
+							dup2(p[1], 1);
+							execlp(token, token, NULL);	//executes the current arg
+							perror("exec");
+							abort();
+							}
+					}
+				
+				}
+				else {
+					wait(NULL);
+				}
+
+				dup2(p[0], 0);
+				close(p[1]);
+		}
+		
+		while(token != NULL){		
+			if(strcmp(token, "|") && token != NULL){
+				execlp(token, token, NULL);
+				perror("exec");
+				abort();
+			}
+		}
+
+}
 int main(){
 
     char* buffer;
     char* token;
     token = strtok (buffer,";\n");	//use token to be able to seperate the buffer
-	char* prompt = "prompt D";									//set prompt
-	
-	//printf("Customize shell prompt (extra credit) (Type yes or no): ");
-	//fgets(choice, 100, stdin);
+	char prompt[]="prompt D";	//set prompt
+	char choice[]="no";			//initialize choice to no		
+	printf("Customize shell prompt (extra credit) (Type yes or no): "); 
+	fgets(choice, 100, stdin); //lets us know if the user wants to change
+	if(strcmp(choice, "yes")){	//if user wants to change, get the new prompt and remove the \n due to fgets
+		printf("Enter prompt: ");
+		fgets(prompt, 100, stdin);
+		strtok(prompt, "\n");
+	}
 
+	
 	while(1){                           //while buffer != exit perform each command		//strncmp(buffer, "exit", 4) !=0
 
 		printf("%s: ", prompt);                                          //print prompt and get user input
@@ -155,10 +202,14 @@ int main(){
 		}
 		
 		if(strstr(buffer, "cd") != NULL){                            //if cd is in the buffer, perform cd function       
-            cd(buffer, token);
+			cd(buffer, token);
         }
-		
+		if(strstr(buffer, "|") != NULL){
+			pipe_func(buffer);
+		}
+		else{
 		cmdProcess(buffer);			//otherwise, process commands
+		}
     }
 
     return 0;
