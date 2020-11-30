@@ -184,7 +184,7 @@ int main(){
 	char choice[]="no";			//initialize choice to no		
 	printf("Customize shell prompt (extra credit) (Type yes or no): "); 
 	fgets(choice, 100, stdin); //lets us know if the user wants to change
-	if(!strcmp(choice, "yes")){	//if user wants to change, get the new prompt and remove the \n due to fgets
+	if((strcmp(choice, "yes")) > 0){	//if user wants to change, get the new prompt and remove the \n due to fgets
 		printf("Enter prompt: ");
 		fgets(prompt, 100, stdin);
 		strtok(prompt, "\n");
