@@ -175,9 +175,10 @@ void pipe_func(char *buffer){		//ends program if you try to pipe ;-;
 		}
 
 }
-int main(){
 
-    char* buffer;
+int main(){
+	char* history[20];
+    char buffer[]="";
     char* token;
     token = strtok (buffer,";\n");	//use token to be able to seperate the buffer
 	char prompt[]="prompt D";	//set prompt
@@ -203,7 +204,7 @@ int main(){
 			exitShell(buffer);
 		}
 		
-		if(strstr(buffer, "cd") != NULL){                            //if cd is in the buffer, perform cd function       
+		if(strstr(buffer, "cd") != NULL){    //if cd is in the buffer, perform cd function       
 			cd(buffer, token);
         }
 		if(strstr(buffer, "|") != NULL){
